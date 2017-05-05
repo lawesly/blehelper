@@ -1,0 +1,12 @@
+ext {
+    extraLibrary = [
+            // For butterknife
+            'com.jakewharton:butterknife:8.5.1',
+            // For size
+            'com.intuit.sdp:sdp-android:1.0.3',
+            // For log (KLog)
+            'com.github.zhaokaiqiang.klog:library:1.6.0',
+            // For BLE scanning (Nordic)
+            'no.nordicsemi.android.support.v18:scanner:1.0.0'
+    ]
+}
