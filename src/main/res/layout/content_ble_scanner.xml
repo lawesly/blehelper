@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.ppcrong.blescanner.ui.BleScannerActivity"
+    tools:showIn="@layout/activity_ble_scanner">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_alignParentTop="true"
+            android:background="@color/lighter_gray"/>
+
+        <android.support.v7.widget.AppCompatImageButton
+            android:id="@+id/img_btn_scan"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="@dimen/_10sdp"
+            android:background="@drawable/circle"
+            android:src="@drawable/ic_refresh"
+            app:backgroundTint="@drawable/bkg_scan_button"
+            app:backgroundTintMode="src_over"/>
+
+        <TextView
+            android:id="@+id/tv_scan_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:layout_toEndOf="@id/img_btn_scan"
+            android:paddingLeft="@dimen/_5sdp"
+            android:text="@string/scanning"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="@dimen/_16sdp"
+            android:textStyle="bold"/>
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:paddingRight="@dimen/_20sdp">
+
+            <ProgressBar
+                android:id="@+id/pb_scanning"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"/>
+        </RelativeLayout>
+    </RelativeLayout>
+
+    <CheckBox
+        android:id="@+id/cb_auto_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_marginLeft="@dimen/_10sdp"
+        android:buttonTint="@color/colorAccent"
+        android:text="@string/auto_connect"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="left|top">
+
+        <TextView
+            android:id="@+id/tv_bonded_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/lighter_gray"
+            android:paddingBottom="@dimen/_2sdp"
+            android:paddingLeft="@dimen/_10sdp"
+            android:paddingRight="@dimen/_10sdp"
+            android:paddingTop="@dimen/_2sdp"
+            android:text="@string/bonded"
+            android:textAllCaps="true"
+            android:textColor="@color/sora"
+            android:textSize="@dimen/_16sdp"
+            android:textStyle="bold"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/rv_bonded_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_bonded_title"
+            android:clickable="true"
+            android:overScrollMode="never"
+            android:paddingLeft="@dimen/_10sdp"
+            android:paddingRight="@dimen/_10sdp"
+            android:scrollbars="none"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tv_bonded_empty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_bonded_title"
+            android:paddingLeft="@dimen/_10sdp"
+            android:paddingRight="@dimen/_10sdp"
+            android:text="@string/no_device_bonded"
+            android:textSize="@dimen/_16sdp"/>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:gravity="left|top">
+
+        <TextView
+            android:id="@+id/tv_available_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/lighter_gray"
+            android:paddingBottom="@dimen/_2sdp"
+            android:paddingLeft="@dimen/_10sdp"
+            android:paddingRight="@dimen/_10sdp"
+            android:paddingTop="@dimen/_2sdp"
+            android:text="@string/available"
+            android:textAllCaps="true"
+            android:textColor="@color/sora"
+            android:textSize="@dimen/_16sdp"
+            android:textStyle="bold"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/rv_available_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_available_title"
+            android:clickable="true"
+            android:overScrollMode="never"
+            android:paddingLeft="@dimen/_10sdp"
+            android:paddingRight="@dimen/_10sdp"
+            android:scrollbars="none"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tv_available_empty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_available_title"
+            android:paddingLeft="@dimen/_10sdp"
+            android:paddingRight="@dimen/_10sdp"
+            android:text="@string/no_device_found"
+            android:textSize="@dimen/_16sdp"/>
+
+    </RelativeLayout>
+
+</LinearLayout>

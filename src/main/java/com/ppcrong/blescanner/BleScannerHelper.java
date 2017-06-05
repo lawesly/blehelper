@@ -1,49 +1,23 @@
 package com.ppcrong.blescanner;
 
 import android.content.Context;
+import android.content.Intent;
+import android.support.annotation.UiThread;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import no.nordicsemi.android.support.v18.scanner.ScanFilter;
+import com.ppcrong.blescanner.ui.BleScannerActivity;
+import com.ppcrong.blescanner.utils.Utils;
 
 /**
- * BleScannerHelper
+ * BLE Scanner Helper.
  */
+
 public class BleScannerHelper {
 
-    // region [Variable]
-    private ConcurrentHashMap<String, Object> mMap = new ConcurrentHashMap<>();
-    private Context mContext;
-    private CopyOnWriteArrayList<ScanFilter> mScanFilters = new CopyOnWriteArrayList<>();
-    // endregion [Variable]
+    @UiThread
+    public static void show(Context ctx) {
 
-    /**
-     * Ctor
-     * @param builder The Builder
-     */
-    private BleScannerHelper(Builder builder) {
-        this.mContext = builder.mContext;
-        this.mScanFilters = builder.mScanFilters;
+        Intent pageIntent = new Intent();
+        pageIntent.setClass(ctx, BleScannerActivity.class);
+        Utils.startSafeIntent(ctx, pageIntent);
     }
-
-    // region [Private Function]
-    // endregion [Private Function]
-
-    // region [Builder]
-    public static class Builder {
-
-        private Context mContext;
-        private CopyOnWriteArrayList<ScanFilter> mScanFilters = new CopyOnWriteArrayList<>();
-
-        public Builder(Context context) {
-            this.mContext = context;
-        }
-
-        public Builder addScanFilters(ScanFilter filter) {
-            mScanFilters.add(filter);
-            return this;
-        }
-    }
-    // endregion [Builder]
 }

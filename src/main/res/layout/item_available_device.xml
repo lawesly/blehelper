@@ -1,0 +1,40 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingBottom="4dp"
+                android:paddingTop="4dp">
+
+    <TextView
+        android:id="@+id/tv_available_device_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/_16sdp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tv_available_device_address"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_available_device_name"
+        android:textSize="@dimen/_16sdp"
+        android:layout_marginTop="@dimen/_2sdp"/>
+
+    <ProgressBar
+        android:id="@+id/pb_connecting"
+        style="@android:style/Widget.ProgressBar.Small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginTop="@dimen/_2sdp"
+        android:visibility="gone"/>
+
+    <View
+        android:id="@+id/view_separator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/lighter_gray"
+        android:layout_alignParentBottom="true"/>
+
+</RelativeLayout>

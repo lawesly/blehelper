@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">blescanner</string>
+    <string name="action_settings">设定</string>
+    <string name="action_scan_device">扫描装置</string>
+    <string name="ask_for_disconnect">确定要将此装置断线吗?</string>
+    <string name="available">允许联机装置</string>
+    <string name="back">返回</string>
+    <string name="bonded">已绑定装置</string>
+    <string name="close">关闭</string>
+    <string name="confirm">确认</string>
+    <string name="device">装置</string>
+    <string name="disconnect">中断断线</string>
+    <string name="has_been_disconnected">已断线</string>
+    <string name="no_device_found">未搜寻到装置</string>
+    <string name="no_device_bonded">尚未绑定装置</string>
+    <string name="ok">确认</string>
+    <string name="scan_completed">搜寻结束</string>
+    <string name="scanning">搜寻中...</string>
+    <string name="stop_scanning">搜寻已中断</string>
+    <string name="unknown">未知装置</string>
+    <string name="dismiss">关闭</string>
+    <string name="ble_not_supported">该设备不支持BLE!</string>
+    <string name="bt_not_enabled">该设备未开启蓝牙</string>
+    <string name="connected">已联机</string>
+    <string name="disconnected">已断线</string>
+    <string name="auto_connect">自动连线</string>
+</resources>

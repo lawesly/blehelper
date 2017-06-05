@@ -1,0 +1,50 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingBottom="4dp"
+                android:paddingTop="4dp">
+
+    <TextView
+        android:id="@+id/tv_bonded_device_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_2sdp"
+        android:textSize="@dimen/_16sdp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tv_bonded_device_address"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_bonded_device_name"
+        android:textSize="@dimen/_16sdp"
+        android:layout_marginTop="@dimen/_2sdp"/>
+
+    <TextView
+        android:id="@+id/tv_bonded_device_type"
+        android:layout_width="@dimen/_16sdp"
+        android:layout_height="@dimen/_16sdp"
+        android:layout_alignBaseline="@+id/tv_bonded_device_name"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="@dimen/_2sdp"
+        android:background="@drawable/bkg_device_type"
+        android:gravity="center"
+        android:text="–"
+        android:textAllCaps="true"/>
+
+    <ImageView
+        android:id="@+id/img_battery"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:rotation="-90"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/tv_bonded_device_type"/>
+
+    <View
+        android:id="@+id/view_separator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/lighter_gray"
+        android:layout_alignParentBottom="true"/>
+</RelativeLayout>
