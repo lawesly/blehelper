@@ -1,4 +1,4 @@
-# blescanner
+# blehelper
 The BLE scan/connection library
 * BleHelper
 * BleScannerActivity
