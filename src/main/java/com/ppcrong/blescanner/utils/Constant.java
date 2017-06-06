@@ -1,16 +1,19 @@
 package com.ppcrong.blescanner.utils;
 
 /**
- * Contant.
+ * Constant.
  */
 
 public class Constant {
 
     // Lib Name
-    public static final String LIB_NAME = "com.ppcrong.blescanner";
+    public static final String LIB_NAME = "com.ppcrong.blehelper";
+
+    // region [SP Name]
+    public static final String SP_NAME_SCAN_SETTINGS = "scan_settings";
+    // endregion [SP Name]
 
     // region [Action]
-    public static final String ACTION_SCAN_RESULT_PAIR = LIB_NAME + ".ACTION_SCAN_RESULT_PAIR";
     public static final String ACTION_REQUEST_CONNECT = LIB_NAME + ".ACTION_REQUEST_CONNECT";
     public static final String ACTION_REQUEST_DISCONNECT = LIB_NAME + ".ACTION_REQUEST_DISCONNECT";
     // endregion [Action]
@@ -24,6 +27,7 @@ public class Constant {
     public static final String DEVICE_CONNECTING = "device_connecting";
     public static final String DEVICE_AUTO_CONNECT = "device_auto_connect";
     public static final String DEVICE_PAIR_ADDRESS = "device_pair_address";
+    public static final String DEVICE_PAIR_ENABLE = "device_pair_enable";
     // endregion [Key]
 
     // region [BLE Scan]

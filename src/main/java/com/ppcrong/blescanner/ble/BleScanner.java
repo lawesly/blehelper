@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner.bluetooth;
+package com.ppcrong.blescanner.ble;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -77,7 +77,7 @@ public class BleScanner {
     // region [Public Function]
     public void startScan() {
 
-        if (isBluetoothEnable(mBuilder.mContext)) {
+        if (BleUtils.isBluetoothEnable(mBuilder.mContext)) {
 
             BluetoothLeScannerCompat scanner = BluetoothLeScannerCompat.getScanner();
             scanner.startScan(mBuilder.mScanFilters, mBuilder.mScanSettings, mBuilder.mScanCb);
@@ -86,7 +86,7 @@ public class BleScanner {
 
     public void stopScan() {
 
-        if (isBluetoothEnable(mBuilder.mContext)) {
+        if (BleUtils.isBluetoothEnable(mBuilder.mContext)) {
 
             BluetoothLeScannerCompat scanner = BluetoothLeScannerCompat.getScanner();
             scanner.stopScan(mBuilder.mScanCb);
@@ -96,55 +96,6 @@ public class BleScanner {
     // endregion [Public Function]
 
     // region [Private Function]
-    // region [Check]
-
-    /**
-     * Check if bluetooth is enabled or not
-     *
-     * @param context The context
-     * @return true for enable, false for disable
-     */
-    public static boolean isBluetoothEnable(Context context) {
-        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
-        boolean b = false;
-        if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
-            b = true;
-        }
-        KLog.d("isBluetoothEnable = " + b);
-        return b;
-    }
-
-    /**
-     * Check if device supports BLE or not
-     *
-     * @param context        The context
-     * @param id_not_support The string id to show not support string
-     */
-    public static void isBleSupport(Context context, int id_not_support) {
-        boolean b = context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-        KLog.d("isBleSupport = " + b);
-        if (!b) {
-            Toast.makeText(context, id_not_support, Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    /**
-     * Check if device supports BLE or not
-     *
-     * @param activity       The activity
-     * @param id_not_support The string id to show not support string
-     */
-    public static void isBleSupport(Activity activity, int id_not_support) {
-        boolean b = activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-        KLog.d("isBleSupport = " + b);
-        if (!b) {
-            Toast.makeText(activity, id_not_support, Toast.LENGTH_SHORT).show();
-            KLog.d("Finish activity");
-            activity.finish();
-        }
-    }
-    // endregion [Check]
     // endregion [Private Function]
 
 }

@@ -7,6 +7,8 @@ ext {
             // For log (KLog)
             'com.github.zhaokaiqiang.klog:library:1.6.0',
             // For BLE scanning (Nordic)
-            'no.nordicsemi.android.support.v18:scanner:1.0.0'
+            'no.nordicsemi.android.support.v18:scanner:1.0.0',
+            // For MaterialDialog
+            'com.afollestad.material-dialogs:commons:0.9.1.0'
     ]
 }

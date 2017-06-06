@@ -1,30 +1,43 @@
 package com.ppcrong.blescanner.ui;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatImageButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.ppcrong.blescanner.R;
 import com.ppcrong.blescanner.R2;
 import com.ppcrong.blescanner.adapter.AvailableListAdapter;
 import com.ppcrong.blescanner.adapter.BondedListAdapter;
-import com.ppcrong.blescanner.bluetooth.BleScanner;
+import com.ppcrong.blescanner.ble.BleGattCb;
+import com.ppcrong.blescanner.ble.BleScanner;
 import com.ppcrong.blescanner.utils.Constant;
+import com.ppcrong.blescanner.utils.SPUtils;
 import com.socks.library.KLog;
 
 import java.util.HashMap;
@@ -47,6 +60,11 @@ public class BleScannerActivity extends AppCompatActivity {
 
     // region [Variable]
     private BleScanner mScanner;
+    private BluetoothGatt mGatt;
+    private SPUtils mScanSp;
+    private String mConnectedName = "";
+    private String mConnectedAddress = "";
+    private boolean mManualDisconnect = false;
     // endregion [Variable]
 
     // region [Adapter]
@@ -102,6 +120,7 @@ public class BleScannerActivity extends AppCompatActivity {
 
         mContext = getApplicationContext();
         mRes = getResources();
+        mScanSp = new SPUtils(mContext, Constant.SP_NAME_SCAN_SETTINGS);
 
         initView();
         initScanner();
@@ -111,9 +130,40 @@ public class BleScannerActivity extends AppCompatActivity {
     protected void onDestroy() {
         KLog.d();
         scanDevice(false, true);
+
+        // Disconnect and Close GATT client
+        if (mGatt != null) {
+
+            mGatt.disconnect();
+            mGatt.close();
+            mGatt = null;
+        }
+
+        // Unregister receiver
+        unregisterReceiver(mBleConnectReceiver);
+
+        // Save auto connect
+        mScanSp.put(Constant.DEVICE_AUTO_CONNECT, mCbAutoConnect.isChecked());
+
         super.onDestroy();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_scan, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == android.R.id.home) {
+            onBackPressed();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
     // endregion [Life Cycle]
 
     // region [Private Function]
@@ -137,9 +187,14 @@ public class BleScannerActivity extends AppCompatActivity {
         mAvailableListAdapter.registerAdapterDataObserver(mAvailableObserver);
         mRvAvailableList.setLayoutManager(new LinearLayoutManager(mContext));
         mRvAvailableList.setAdapter(mAvailableListAdapter);
+
+        mCbAutoConnect.setChecked(mScanSp.getBoolean(Constant.DEVICE_AUTO_CONNECT, false));
     }
 
     private void initScanner() {
+        // Receiver to update BLE device connect status
+        registerReceiver(mBleConnectReceiver, getIntentFilter());
+
         // Get BleScanner object
         mScanner = new BleScanner.Builder(this)
                 .setScanCb(mScanCallback)
@@ -208,6 +263,26 @@ public class BleScannerActivity extends AppCompatActivity {
             }
         }
     }
+
+    private void connectGatt(BluetoothDevice device) {
+
+        mScanSp.put(Constant.DEVICE_PAIR_ADDRESS, device.getAddress()); // Save pair device address
+        boolean autoConnect = mScanSp.getBoolean(Constant.DEVICE_AUTO_CONNECT, false);
+        KLog.i("Connecting to " + device.getName() + " Address: " + device.getAddress() + " AutoConnect: " + autoConnect);
+
+        mGatt = device.connectGatt(mContext, autoConnect, mBleGattCb);
+    }
+
+    private IntentFilter getIntentFilter() {
+
+        KLog.d();
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Constant.ACTION_REQUEST_CONNECT);
+        filter.addAction(Constant.ACTION_REQUEST_DISCONNECT);
+
+        return filter;
+    }
     // endregion [Private Function]
 
     // region [Task]
@@ -237,6 +312,78 @@ public class BleScannerActivity extends AppCompatActivity {
         }
     };
     // endregion [Task]
+
+    // region [BroadcastReceiver]
+    private BroadcastReceiver mBleConnectReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, final Intent intent) {
+
+            final String action = intent.getAction();
+            KLog.i(action);
+
+            if (action.equalsIgnoreCase(Constant.ACTION_REQUEST_CONNECT)) {
+
+                if (!mTvScanState.getText().toString().equalsIgnoreCase(mRes.getString(R.string.scan_completed))) {
+                    scanDevice(false, true);
+                } else {
+                    scanDevice(false, false);
+                }
+
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+                boolean isExist = false;
+
+                if (mConnectedAddress.equals(device.getAddress())) {
+                    isExist = true;
+                }
+
+                boolean hasBondedDevice = mBondedList.size() != 0;
+                KLog.i("isExist: " + isExist + ", hasBondedDevice: " + hasBondedDevice);
+
+                // Only connect device when no bonded device
+                if (!isExist && !hasBondedDevice) {
+
+                    if (mConnectedAddress.equals("")) {
+
+                        mConnectedName = (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName();
+                        mConnectedAddress = device.getAddress();
+                        connectGatt(device);
+                    }
+                }
+            } else if (action.equals(Constant.ACTION_REQUEST_DISCONNECT)) {
+
+                final String address = intent.getStringExtra(Constant.DEVICE_ADDRESS);
+
+                MaterialDialog dialog = new MaterialDialog.Builder(context)
+                        .title(R.string.disconnect)
+                        .titleColor(ContextCompat.getColor(mContext, R.color.dimgray))
+                        .content(R.string.ask_for_disconnect)
+                        .positiveText(R.string.confirm)
+                        .negativeText(R.string.back)
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+
+                                if (!address.isEmpty()) {
+
+                                    if (mConnectedAddress.equals(address)) {
+                                        mManualDisconnect = true;
+
+                                        // Disconnect GATT client
+                                        if (mGatt != null) mGatt.disconnect();
+                                    }
+                                }
+                            }
+                        })
+                        .build();
+
+                dialog.show();
+            }
+        }
+    };
+    // endregion [BroadcastReceiver]
 
     // region [Listener]
     public RecyclerView.AdapterDataObserver mBondedObserver = new RecyclerView.AdapterDataObserver() {
@@ -321,6 +468,108 @@ public class BleScannerActivity extends AppCompatActivity {
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
+        }
+    };
+
+    private BleGattCb mBleGattCb = new BleGattCb() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            super.onConnectionStateChange(gatt, status, newState);
+            final BluetoothDevice device = gatt.getDevice();
+            KLog.d("address : " + device.getAddress());
+
+            if (mConnectState == BluetoothProfile.STATE_DISCONNECTED || mConnectState == 133) {
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < mBondedList.size(); i++) {
+
+                            if (mBondedList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
+
+                                mBondedList.remove(i);
+                                mBondedListAdapter.notifyDataSetChanged();
+                            }
+                        }
+
+                        for (int i = 0; i < mAvailableList.size(); i++) {
+
+                            if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
+
+                                mAvailableList.get(i).put(Constant.DEVICE_CONNECTING, false);
+                                mAvailableListAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                });
+
+                if (mConnectedAddress.equals(device.getAddress())) {
+                    mConnectedName = "";
+                    mConnectedAddress = "";
+                }
+
+                if (!mManualDisconnect) {
+
+                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
+                            ((device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName()) + " " + mRes.getString(R.string.has_been_disconnected),
+                            Snackbar.LENGTH_INDEFINITE);
+                    snackbar.setAction(mRes.getString(R.string.dismiss), new View.OnClickListener() {
+
+                        @Override
+                        public void onClick(View view) {
+
+                        }
+                    });
+                    snackbar.setActionTextColor(ContextCompat.getColor(mContext, R.color.yellow));
+                    snackbar.getView().setBackgroundColor(ContextCompat.getColor(mContext, R.color.colorPrimary));
+                    snackbar.show();
+
+                } else {
+                    // Close GATT client (Only when manual disconnect)
+                    if (mGatt != null) {
+                        mGatt.close();
+                        mGatt = null;
+                    }
+
+                    // Re-scan device
+//                runOnUiThread(new Runnable() {
+//                                  @Override
+//                                  public void run() {
+//                                      scanDevice(true, true);
+//                                  }
+//                              });
+                }
+
+            } else if (mConnectState == BluetoothProfile.STATE_CONNECTED) {
+                // Check name and addr for re-connect case
+                if (mConnectedAddress.equals("")) {
+
+                    mConnectedName = (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName();
+                    mConnectedAddress = device.getAddress();
+                }
+
+                final HashMap<String, Object> map = new HashMap();
+                map.put(Constant.DEVICE_NAME, (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName());
+                map.put(Constant.DEVICE_ADDRESS, device.getAddress());
+
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        mBondedList.add(map);
+                        mBondedListAdapter.notifyDataSetChanged();
+
+                        for (int i = 0; i < mAvailableList.size(); i++) {
+
+                            if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
+
+                                mAvailableList.remove(i);
+                                mAvailableListAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                });
+            }
         }
     };
     // endregion [Callback]

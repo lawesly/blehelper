@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner.bluetooth;
+package com.ppcrong.blescanner.ble;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
