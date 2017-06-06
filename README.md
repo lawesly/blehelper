@@ -1,2 +1,6 @@
 # blescanner
-The BLE scan library
+The BLE scan/connection library
+* BleHelper
+* BleScannerActivity
+    - BleScanner
+    - BleGattCb
