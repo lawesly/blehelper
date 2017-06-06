@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner.adapter;
+package com.ppcrong.blehelper.adapter;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,9 +9,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.ppcrong.blescanner.R;
-import com.ppcrong.blescanner.R2;
-import com.ppcrong.blescanner.utils.Constant;
+import com.ppcrong.blehelper.R;
+import com.ppcrong.blehelper.R2;
+import com.ppcrong.blehelper.utils.Constant;
 
 import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;

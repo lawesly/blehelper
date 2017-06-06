@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner.utils;
+package com.ppcrong.blehelper.utils;
 
 import android.content.Context;
 import android.content.Intent;

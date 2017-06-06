@@ -1,15 +1,8 @@
-package com.ppcrong.blescanner.ble;
+package com.ppcrong.blehelper.ble;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
-import android.widget.Toast;
-
-import com.socks.library.KLog;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 

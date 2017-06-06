@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner.ui;
+package com.ppcrong.blehelper.ui;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -30,14 +30,14 @@ import android.widget.TextView;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.ppcrong.blescanner.R;
-import com.ppcrong.blescanner.R2;
-import com.ppcrong.blescanner.adapter.AvailableListAdapter;
-import com.ppcrong.blescanner.adapter.BondedListAdapter;
-import com.ppcrong.blescanner.ble.BleGattCb;
-import com.ppcrong.blescanner.ble.BleScanner;
-import com.ppcrong.blescanner.utils.Constant;
-import com.ppcrong.blescanner.utils.SPUtils;
+import com.ppcrong.blehelper.R;
+import com.ppcrong.blehelper.R2;
+import com.ppcrong.blehelper.adapter.AvailableListAdapter;
+import com.ppcrong.blehelper.adapter.BondedListAdapter;
+import com.ppcrong.blehelper.ble.BleGattCb;
+import com.ppcrong.blehelper.ble.BleScanner;
+import com.ppcrong.blehelper.utils.Constant;
+import com.ppcrong.blehelper.utils.SPUtils;
 import com.socks.library.KLog;
 
 import java.util.HashMap;

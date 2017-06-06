@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner;
+package com.ppcrong.blehelper;
 
 import org.junit.Test;
 

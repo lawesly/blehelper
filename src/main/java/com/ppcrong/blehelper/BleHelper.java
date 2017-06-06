@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner;
+package com.ppcrong.blehelper;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothGatt;
@@ -8,11 +8,11 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 
-import com.ppcrong.blescanner.ble.BleUtils;
-import com.ppcrong.blescanner.ui.BleScannerActivity;
-import com.ppcrong.blescanner.utils.Constant;
-import com.ppcrong.blescanner.utils.SPUtils;
-import com.ppcrong.blescanner.utils.Utils;
+import com.ppcrong.blehelper.ble.BleUtils;
+import com.ppcrong.blehelper.ui.BleScannerActivity;
+import com.ppcrong.blehelper.utils.Constant;
+import com.ppcrong.blehelper.utils.SPUtils;
+import com.ppcrong.blehelper.utils.Utils;
 import com.socks.library.KLog;
 
 /**

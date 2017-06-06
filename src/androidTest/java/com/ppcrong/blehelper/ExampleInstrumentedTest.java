@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner;
+package com.ppcrong.blehelper;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

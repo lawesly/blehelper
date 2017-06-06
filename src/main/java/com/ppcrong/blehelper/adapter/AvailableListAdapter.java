@@ -1,4 +1,4 @@
-package com.ppcrong.blescanner.adapter;
+package com.ppcrong.blehelper.adapter;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -10,9 +10,9 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.ppcrong.blescanner.R;
-import com.ppcrong.blescanner.R2;
-import com.ppcrong.blescanner.utils.Constant;
+import com.ppcrong.blehelper.R;
+import com.ppcrong.blehelper.R2;
+import com.ppcrong.blehelper.utils.Constant;
 import com.socks.library.KLog;
 
 import java.util.HashMap;

@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.ppcrong.blescanner.ui.BleScannerActivity">
+    tools:context="com.ppcrong.blehelper.ui.BleScannerActivity">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
