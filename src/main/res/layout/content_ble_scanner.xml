@@ -26,7 +26,7 @@
             android:layout_height="@dimen/_32sdp"
             android:layout_centerVertical="true"
             android:layout_marginLeft="@dimen/_10sdp"
-            android:background="@drawable/circle"
+            android:background="@drawable/bkg_circle"
             android:src="@drawable/ic_refresh"
             app:backgroundTint="@drawable/bkg_scan_button"
             app:backgroundTintMode="src_over"/>
