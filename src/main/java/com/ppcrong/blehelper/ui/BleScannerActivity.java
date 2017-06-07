@@ -360,6 +360,16 @@ public class BleScannerActivity extends AppCompatActivity {
                         mConnectedAddress = device.getAddress();
                         mGatt = mBleHelper.connectGatt(device);
                     }
+                } else {
+                    // Hide connecting progress
+                    for (int i = 0; i < mAvailableList.size(); i++) {
+
+                        if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
+
+                            mAvailableList.get(i).put(Constant.DEVICE_CONNECTING, false);
+                            mAvailableListAdapter.notifyDataSetChanged();
+                        }
+                    }
                 }
             } else if (action.equals(Constant.ACTION_REQUEST_DISCONNECT)) {
 

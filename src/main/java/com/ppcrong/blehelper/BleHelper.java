@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 
+import com.ppcrong.blehelper.ble.BleGattCb;
 import com.ppcrong.blehelper.ble.BleUtils;
 import com.ppcrong.blehelper.ui.BleScannerActivity;
 import com.ppcrong.blehelper.utils.Constant;
@@ -75,13 +76,24 @@ public class BleHelper {
     public BluetoothGatt initConnection() {
         String pairAddress = getPairAddress(mBuilder.mContext);
         boolean pairEnabled = getIsPairEnabled(mBuilder.mContext);
-        boolean isConnected = getIsConnected(mBuilder.mContext);
+        boolean isNeedConnected = getIsConnected(mBuilder.mContext);
+        boolean isDeviceConnected = isDeviceConnected();
         boolean autoConnect = getIsAutoConnect(mBuilder.mContext);
-        KLog.d("pairAddress: " + pairAddress + ", pairEnabled: " + pairEnabled + ", isConnected: " + isConnected + ", autoConnect: " + autoConnect);
+        KLog.d("pairAddress: " + pairAddress + ", pairEnabled: " + pairEnabled
+                + ", isNeedConnected: " + isNeedConnected + ", isDeviceConnected: " + isDeviceConnected
+                + ", autoConnect: " + autoConnect);
 
-        // Directly connectGatt when pairEnabled or device is connected
-        if (!pairAddress.isEmpty() && (pairEnabled || isConnected)) {
-            mGatt = BleUtils.connectGatt(mBuilder.mContext, mBuilder.mBleGattCb, pairAddress, autoConnect);
+        if (isDeviceConnected) { // Now device is connected
+            if (!isNeedConnected) {
+                // If device isn't connected in Scanner page, we need to make other page status the same as Scanner page, so we disconnect device here
+                mGatt.disconnect();
+                mGatt = null;
+            }
+        } else {
+            // Directly connectGatt when pairEnabled or device is connected
+            if (!pairAddress.isEmpty() && (pairEnabled || isNeedConnected)) {
+                mGatt = BleUtils.connectGatt(mBuilder.mContext, mBuilder.mBleGattCb, pairAddress, autoConnect);
+            }
         }
 
         return mGatt;
@@ -96,6 +108,13 @@ public class BleHelper {
 
         mGatt = device.connectGatt(mBuilder.mContext, autoConnect, mBuilder.mBleGattCb);
         return mGatt;
+    }
+
+    public boolean isDeviceConnected() {
+        if (mBuilder.mBleGattCb instanceof BleGattCb) {
+            return ((BleGattCb) mBuilder.mBleGattCb).isConnected();
+        }
+        return false;
     }
 
     public static String getPairAddress(Context ctx) {
