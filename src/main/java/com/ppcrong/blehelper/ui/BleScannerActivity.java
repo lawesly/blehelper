@@ -2,7 +2,6 @@ package com.ppcrong.blehelper.ui;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,6 +29,7 @@ import android.widget.TextView;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.ppcrong.blehelper.BleHelper;
 import com.ppcrong.blehelper.R;
 import com.ppcrong.blehelper.R2;
 import com.ppcrong.blehelper.adapter.AvailableListAdapter;
@@ -37,7 +37,6 @@ import com.ppcrong.blehelper.adapter.BondedListAdapter;
 import com.ppcrong.blehelper.ble.BleGattCb;
 import com.ppcrong.blehelper.ble.BleScanner;
 import com.ppcrong.blehelper.utils.Constant;
-import com.ppcrong.blehelper.utils.SPUtils;
 import com.socks.library.KLog;
 
 import java.util.HashMap;
@@ -59,9 +58,10 @@ public class BleScannerActivity extends AppCompatActivity {
     // endregion [Content]
 
     // region [Variable]
+    private BleHelper mBleHelper;
     private BleScanner mScanner;
     private BluetoothGatt mGatt;
-    private SPUtils mScanSp;
+    private BleGattCb mBleGattCb;
     private String mConnectedName = "";
     private String mConnectedAddress = "";
     private boolean mManualDisconnect = false;
@@ -84,6 +84,8 @@ public class BleScannerActivity extends AppCompatActivity {
     TextView mTvScanState;
     @BindView(R2.id.pb_scanning)
     ProgressBar mPbScanning;
+    @BindView(R2.id.cb_pair_device)
+    CheckBox mCbPairDevice;
     @BindView(R2.id.cb_auto_connect)
     CheckBox mCbAutoConnect;
     @BindView(R2.id.rv_bonded_list)
@@ -120,10 +122,9 @@ public class BleScannerActivity extends AppCompatActivity {
 
         mContext = getApplicationContext();
         mRes = getResources();
-        mScanSp = new SPUtils(mContext, Constant.SP_NAME_SCAN_SETTINGS);
 
         initView();
-        initScanner();
+        initBleStuff();
     }
 
     @Override
@@ -143,8 +144,10 @@ public class BleScannerActivity extends AppCompatActivity {
         unregisterReceiver(mBleConnectReceiver);
 
         // Save auto connect
-        mScanSp.put(Constant.DEVICE_AUTO_CONNECT, mCbAutoConnect.isChecked());
+        BleHelper.setIsAutoConnect(mContext, mCbAutoConnect.isChecked());
 
+        // Save pair enable
+        BleHelper.setIsPairEnabled(mContext, mCbPairDevice.isChecked());
         super.onDestroy();
     }
 
@@ -188,10 +191,12 @@ public class BleScannerActivity extends AppCompatActivity {
         mRvAvailableList.setLayoutManager(new LinearLayoutManager(mContext));
         mRvAvailableList.setAdapter(mAvailableListAdapter);
 
-        mCbAutoConnect.setChecked(mScanSp.getBoolean(Constant.DEVICE_AUTO_CONNECT, false));
+        // Load sp
+        mCbPairDevice.setChecked(BleHelper.getIsPairEnabled(mContext));
+        mCbAutoConnect.setChecked(BleHelper.getIsAutoConnect(mContext));
     }
 
-    private void initScanner() {
+    private void initBleStuff() {
         // Receiver to update BLE device connect status
         registerReceiver(mBleConnectReceiver, getIntentFilter());
 
@@ -209,6 +214,20 @@ public class BleScannerActivity extends AppCompatActivity {
 
         // Set scan timeout
         mStopScanHandler.postDelayed(mStopScanRunnable, Constant.SCAN_PERIOD);
+
+        // init BleGattCb
+        mBleGattCb = new BleGattCb(mContext){
+            @Override
+            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                super.onConnectionStateChange(gatt, status, newState);
+                BleScannerActivity.this.onConnectionStateChange(gatt, status, newState, this);
+            }
+        };
+
+        // init BleHelper
+        mBleHelper = new BleHelper.Builder(this)
+                .setBleGattCb(mBleGattCb).build();
+        mGatt = mBleHelper.initConnection();
     }
 
     private void scanDevice(boolean scan, boolean manualStop) {
@@ -262,15 +281,6 @@ public class BleScannerActivity extends AppCompatActivity {
                 ));
             }
         }
-    }
-
-    private void connectGatt(BluetoothDevice device) {
-
-        mScanSp.put(Constant.DEVICE_PAIR_ADDRESS, device.getAddress()); // Save pair device address
-        boolean autoConnect = mScanSp.getBoolean(Constant.DEVICE_AUTO_CONNECT, false);
-        KLog.i("Connecting to " + device.getName() + " Address: " + device.getAddress() + " AutoConnect: " + autoConnect);
-
-        mGatt = device.connectGatt(mContext, autoConnect, mBleGattCb);
     }
 
     private IntentFilter getIntentFilter() {
@@ -348,7 +358,7 @@ public class BleScannerActivity extends AppCompatActivity {
 
                         mConnectedName = (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName();
                         mConnectedAddress = device.getAddress();
-                        connectGatt(device);
+                        mGatt = mBleHelper.connectGatt(device);
                     }
                 }
             } else if (action.equals(Constant.ACTION_REQUEST_DISCONNECT)) {
@@ -471,106 +481,99 @@ public class BleScannerActivity extends AppCompatActivity {
         }
     };
 
-    private BleGattCb mBleGattCb = new BleGattCb() {
-        @Override
-        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            super.onConnectionStateChange(gatt, status, newState);
-            final BluetoothDevice device = gatt.getDevice();
-            KLog.d("address : " + device.getAddress());
+    private void onConnectionStateChange(BluetoothGatt gatt, int status, int newState, final BleGattCb cb) {
 
-            if (mConnectState == BluetoothProfile.STATE_DISCONNECTED || mConnectState == 133) {
-                runOnUiThread(new Runnable() {
+        if (!cb.isConnected()) {
 
-                    @Override
-                    public void run() {
-                        for (int i = 0; i < mBondedList.size(); i++) {
+            // Remove device from bonded list and add to available list
+            runOnUiThread(new Runnable() {
 
-                            if (mBondedList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
+                @Override
+                public void run() {
+                    for (int i = 0; i < mBondedList.size(); i++) {
 
-                                mBondedList.remove(i);
-                                mBondedListAdapter.notifyDataSetChanged();
-                            }
-                        }
+                        if (mBondedList.get(i).get(Constant.DEVICE_ADDRESS).equals(cb.mDevice.getAddress())) {
 
-                        for (int i = 0; i < mAvailableList.size(); i++) {
-
-                            if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
-
-                                mAvailableList.get(i).put(Constant.DEVICE_CONNECTING, false);
-                                mAvailableListAdapter.notifyDataSetChanged();
-                            }
+                            mBondedList.remove(i);
+                            mBondedListAdapter.notifyDataSetChanged();
                         }
                     }
-                });
 
-                if (mConnectedAddress.equals(device.getAddress())) {
-                    mConnectedName = "";
-                    mConnectedAddress = "";
-                }
+                    for (int i = 0; i < mAvailableList.size(); i++) {
 
-                if (!mManualDisconnect) {
+                        if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(cb.mDevice.getAddress())) {
 
-                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
-                            ((device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName()) + " " + mRes.getString(R.string.has_been_disconnected),
-                            Snackbar.LENGTH_INDEFINITE);
-                    snackbar.setAction(mRes.getString(R.string.dismiss), new View.OnClickListener() {
-
-                        @Override
-                        public void onClick(View view) {
-
-                        }
-                    });
-                    snackbar.setActionTextColor(ContextCompat.getColor(mContext, R.color.yellow));
-                    snackbar.getView().setBackgroundColor(ContextCompat.getColor(mContext, R.color.colorPrimary));
-                    snackbar.show();
-
-                } else {
-                    // Close GATT client (Only when manual disconnect)
-                    if (mGatt != null) {
-                        mGatt.close();
-                        mGatt = null;
-                    }
-
-                    // Re-scan device
-//                runOnUiThread(new Runnable() {
-//                                  @Override
-//                                  public void run() {
-//                                      scanDevice(true, true);
-//                                  }
-//                              });
-                }
-
-            } else if (mConnectState == BluetoothProfile.STATE_CONNECTED) {
-                // Check name and addr for re-connect case
-                if (mConnectedAddress.equals("")) {
-
-                    mConnectedName = (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName();
-                    mConnectedAddress = device.getAddress();
-                }
-
-                final HashMap<String, Object> map = new HashMap();
-                map.put(Constant.DEVICE_NAME, (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName());
-                map.put(Constant.DEVICE_ADDRESS, device.getAddress());
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        mBondedList.add(map);
-                        mBondedListAdapter.notifyDataSetChanged();
-
-                        for (int i = 0; i < mAvailableList.size(); i++) {
-
-                            if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
-
-                                mAvailableList.remove(i);
-                                mAvailableListAdapter.notifyDataSetChanged();
-                            }
+                            mAvailableList.get(i).put(Constant.DEVICE_CONNECTING, false);
+                            mAvailableListAdapter.notifyDataSetChanged();
                         }
                     }
-                });
+                }
+            });
+
+            // Reset name and address
+            if (mConnectedAddress.equals(cb.mDevice.getAddress())) {
+                mConnectedName = "";
+                mConnectedAddress = "";
             }
+
+            // If manually disconnect, don't show snackbar and close GATT client
+            if (!mManualDisconnect) {
+
+                // Disconnect unexpectedly, show snackbar to inform user
+                Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
+                        ((cb.mDevice.getName() == null) ? mRes.getString(R.string.unknown) : cb.mDevice.getName()) + " " + mRes.getString(R.string.has_been_disconnected),
+                        Snackbar.LENGTH_INDEFINITE);
+                snackbar.setAction(mRes.getString(R.string.dismiss), new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View view) {
+
+                    }
+                });
+                snackbar.setActionTextColor(ContextCompat.getColor(mContext, R.color.yellow));
+                snackbar.getView().setBackgroundColor(ContextCompat.getColor(mContext, R.color.colorPrimary));
+                snackbar.show();
+
+            } else {
+                // Close GATT client (Only when manual disconnect)
+                if (mGatt != null) {
+                    mGatt.close();
+                    mGatt = null;
+                }
+            }
+
+        } else {
+            // Check name and addr for re-connect case
+            if (mConnectedAddress.equals("")) {
+
+                mConnectedName = (cb.mDevice.getName() == null) ? mRes.getString(R.string.unknown) : cb.mDevice.getName();
+                mConnectedAddress = cb.mDevice.getAddress();
+            }
+
+            // Prepare data for bonded list
+            final HashMap<String, Object> map = new HashMap();
+            map.put(Constant.DEVICE_NAME, (cb.mDevice.getName() == null) ? mRes.getString(R.string.unknown) : cb.mDevice.getName());
+            map.put(Constant.DEVICE_ADDRESS, cb.mDevice.getAddress());
+
+            // Add device to bonded list and remove from avaiable list
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    mBondedList.add(map);
+                    mBondedListAdapter.notifyDataSetChanged();
+
+                    for (int i = 0; i < mAvailableList.size(); i++) {
+
+                        if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(cb.mDevice.getAddress())) {
+
+                            mAvailableList.remove(i);
+                            mAvailableListAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }
+            });
         }
-    };
+    }
     // endregion [Callback]
 }

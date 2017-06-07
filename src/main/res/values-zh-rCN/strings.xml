@@ -24,4 +24,5 @@
     <string name="connected">已联机</string>
     <string name="disconnected">已断线</string>
     <string name="auto_connect">自动连线</string>
+    <string name="pair_device">绑定装置</string>
 </resources>

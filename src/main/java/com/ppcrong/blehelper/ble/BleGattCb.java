@@ -7,7 +7,9 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
+import android.content.Context;
 
+import com.ppcrong.blehelper.BleHelper;
 import com.socks.library.KLog;
 
 import java.util.List;
@@ -19,16 +21,18 @@ public class BleGattCb extends BluetoothGattCallback {
 
     // region [Variable]
     public BluetoothDevice mDevice;
-    public int mConnectState;
+    private int mConnectState;
+    private Context mContext;
     // endregion [Variable]
 
     // region [Ctor]
     /**
      * Ctor
      */
-    public BleGattCb() {
+    public BleGattCb(Context ctx) {
 
-        init();
+        mContext = ctx;
+        mConnectState = BluetoothProfile.STATE_DISCONNECTED;
     }
     // endregion [Ctor]
 
@@ -36,21 +40,22 @@ public class BleGattCb extends BluetoothGattCallback {
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
-        KLog.i("oldStatus : " + status + " newState : " + getConnectString(newState) + "(" + newState + ")");
+        KLog.i("oldStatus : " + status + ", newState : " + getConnectString(newState) + "(" + newState + ")"
+                + ", device : " + gatt.getDevice().getAddress());
+
+        mDevice = gatt.getDevice();
 
         if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothProfile.STATE_CONNECTED) {
 
-            mDevice = gatt.getDevice();
-
             mConnectState = BluetoothProfile.STATE_CONNECTED;
+            BleHelper.setIsConnected(mContext, true);
 
             gatt.discoverServices();
 
         } else {
 
             mConnectState = BluetoothProfile.STATE_DISCONNECTED;
-
-            init();
+            BleHelper.setIsConnected(mContext, false);
         }
     }
 
@@ -129,14 +134,12 @@ public class BleGattCb extends BluetoothGattCallback {
     // endregion [Override]
 
     // region [Public Function]
+    public boolean isConnected() {
+        return mConnectState == BluetoothProfile.STATE_CONNECTED;
+    }
     // endregion [Public Function]
 
     // region [Private Function]
-    private void init() {
-
-        mDevice = null;
-        mConnectState = BluetoothProfile.STATE_DISCONNECTED;
-    }
 
     private String getConnectString(int state) {
         String s = "";

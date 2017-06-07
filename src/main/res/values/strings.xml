@@ -24,4 +24,5 @@
     <string name="dismiss">DISMISS</string>
     <string name="bt_not_enabled">Bluetooth is not enabled!!!</string>
     <string name="auto_connect">Auto Connect</string>
+    <string name="pair_device">PAIR device</string>
 </resources>

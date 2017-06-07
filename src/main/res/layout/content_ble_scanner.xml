@@ -61,13 +61,23 @@
     </RelativeLayout>
 
     <CheckBox
+        android:id="@+id/cb_pair_device"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_marginLeft="@dimen/_10sdp"
+        android:buttonTint="@color/colorAccent"
+        android:text="@string/pair_device"/>
+
+    <CheckBox
         android:id="@+id/cb_auto_connect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:layout_marginLeft="@dimen/_10sdp"
         android:buttonTint="@color/colorAccent"
-        android:text="@string/auto_connect"/>
+        android:text="@string/auto_connect"
+        android:visibility="gone"/>
 
     <RelativeLayout
         android:layout_width="match_parent"

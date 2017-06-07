@@ -1,6 +1,7 @@
 package com.ppcrong.blehelper;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.content.Context;
@@ -23,8 +24,7 @@ public class BleHelper {
 
     // region [Variable]
     protected final Builder mBuilder;
-    private BluetoothGatt mGatt;
-    private SPUtils mScanSp;
+    public BluetoothGatt mGatt;
     // endregion [Variable]
 
     // region [Ctor]
@@ -35,7 +35,6 @@ public class BleHelper {
     @SuppressLint("InflateParams")
     protected BleHelper(@NonNull Builder builder) {
         this.mBuilder = builder;
-        mScanSp = new SPUtils(mBuilder.mContext, Constant.SP_NAME_SCAN_SETTINGS);
     }
     // endregion [Ctor]
 
@@ -72,18 +71,72 @@ public class BleHelper {
         Utils.startSafeIntent(mBuilder.mContext, pageIntent);
     }
 
-    public void init() {
-        String pairAddress = mScanSp.getString(Constant.DEVICE_PAIR_ADDRESS, "");
-        boolean pairEnabled = mScanSp.getBoolean(Constant.DEVICE_PAIR_ENABLE, false);
-        boolean autoConnect = mScanSp.getBoolean(Constant.DEVICE_AUTO_CONNECT, false);
-        KLog.d("pairAddress: " + pairAddress + ", pairEnabled: " + pairEnabled + ", autoConnect: " + autoConnect);
-        if (!pairAddress.isEmpty() && pairEnabled) {
+    // Get Gatt when activity is shown
+    public BluetoothGatt initConnection() {
+        String pairAddress = getPairAddress(mBuilder.mContext);
+        boolean pairEnabled = getIsPairEnabled(mBuilder.mContext);
+        boolean isConnected = getIsConnected(mBuilder.mContext);
+        boolean autoConnect = getIsAutoConnect(mBuilder.mContext);
+        KLog.d("pairAddress: " + pairAddress + ", pairEnabled: " + pairEnabled + ", isConnected: " + isConnected + ", autoConnect: " + autoConnect);
+
+        // Directly connectGatt when pairEnabled or device is connected
+        if (!pairAddress.isEmpty() && (pairEnabled || isConnected)) {
             mGatt = BleUtils.connectGatt(mBuilder.mContext, mBuilder.mBleGattCb, pairAddress, autoConnect);
         }
-    }
 
-    public BluetoothGatt getBleGatt() {
         return mGatt;
     }
+
+    // Get Gatt when tap available list to connect
+    public BluetoothGatt connectGatt(BluetoothDevice device) {
+
+        setPairAddress(mBuilder.mContext, device.getAddress()); // Save pair device address
+        boolean autoConnect = getIsAutoConnect(mBuilder.mContext);
+        KLog.i("Connecting to " + device.getName() + " Address: " + device.getAddress() + " AutoConnect: " + autoConnect);
+
+        mGatt = device.connectGatt(mBuilder.mContext, autoConnect, mBuilder.mBleGattCb);
+        return mGatt;
+    }
+
+    public static String getPairAddress(Context ctx) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        return sp.getString(Constant.DEVICE_PAIR_ADDRESS, "");
+    }
+
+    public static void setPairAddress(Context ctx, String pairAddress) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        sp.put(Constant.DEVICE_PAIR_ADDRESS, pairAddress);
+    }
+
+    public static boolean getIsPairEnabled(Context ctx) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        return sp.getBoolean(Constant.DEVICE_PAIR_ENABLE, false);
+    }
+
+    public static void setIsPairEnabled(Context ctx, boolean isPairEnabled) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        sp.put(Constant.DEVICE_PAIR_ENABLE, isPairEnabled);
+    }
+
+    public static boolean getIsAutoConnect(Context ctx) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        return sp.getBoolean(Constant.DEVICE_AUTO_CONNECT, false);
+    }
+
+    public static void setIsAutoConnect(Context ctx, boolean isAutoConnect) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        sp.put(Constant.DEVICE_AUTO_CONNECT, isAutoConnect);
+    }
+
+    public static boolean getIsConnected(Context ctx) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        return sp.getBoolean(Constant.DEVICE_IS_CONNECTED, false);
+    }
+
+    public static void setIsConnected(Context ctx, boolean isConnected) {
+        SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
+        sp.put(Constant.DEVICE_IS_CONNECTED, isConnected);
+    }
+
     // endregion [Public Function]
 }
