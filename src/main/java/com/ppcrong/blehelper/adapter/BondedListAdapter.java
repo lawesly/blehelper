@@ -1,5 +1,6 @@
 package com.ppcrong.blehelper.adapter;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
@@ -11,9 +12,10 @@ import android.widget.TextView;
 
 import com.ppcrong.blehelper.R;
 import com.ppcrong.blehelper.R2;
+import com.ppcrong.blehelper.model.BleDeviceItemData;
 import com.ppcrong.blehelper.utils.Constant;
+import com.socks.library.KLog;
 
-import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import butterknife.BindView;
@@ -22,9 +24,9 @@ import butterknife.ButterKnife;
 public class BondedListAdapter extends RecyclerView.Adapter<BondedListAdapter.BondedDeviceViewHolder> {
 
     private Context mContext;
-    private CopyOnWriteArrayList<HashMap<String, Object>> mBondedList;
+    private CopyOnWriteArrayList<BleDeviceItemData> mBondedList;
 
-    public BondedListAdapter(Context context, CopyOnWriteArrayList<HashMap<String, Object>> bondedList) {
+    public BondedListAdapter(Context context, CopyOnWriteArrayList<BleDeviceItemData> bondedList) {
         this.mContext = context;
         this.mBondedList = bondedList;
     }
@@ -39,15 +41,17 @@ public class BondedListAdapter extends RecyclerView.Adapter<BondedListAdapter.Bo
 
     @Override
     public void onBindViewHolder(BondedDeviceViewHolder holder, int position) {
+        KLog.d("position: " + position);
 
-        String name = mBondedList.get(position).get(Constant.DEVICE_NAME).toString();
-        String addr = mBondedList.get(position).get(Constant.DEVICE_ADDRESS).toString();
-        int type = mBondedList.get(position).get(Constant.DEVICE_TYPE) == null ? -1 : (int) mBondedList.get(position).get(Constant.DEVICE_TYPE);
-        int percentage = mBondedList.get(position).get(Constant.DEVICE_BATTERY) == null ? -1 : (int) mBondedList.get(position).get(Constant.DEVICE_BATTERY);
+        // Get item data
+        BleDeviceItemData item = mBondedList.get(position);
 
-        holder.mTvName.setText(name);
-        holder.mTvAddress.setText(addr);
+        // Get device to set name and address
+        BluetoothDevice device = item.getDevice();
+        holder.mTvName.setText(device.getName());
+        holder.mTvAddress.setText(device.getAddress());
 
+        int percentage = item.getBatteryPercentage();
         if (percentage == 100) holder.mImgBattery.setImageResource(R.drawable.battery_full);
         if (percentage < 100 && percentage >= 90)
             holder.mImgBattery.setImageResource(R.drawable.battery_90);
@@ -100,10 +104,13 @@ public class BondedListAdapter extends RecyclerView.Adapter<BondedListAdapter.Bo
         @Override
         public void onClick(View view) {
 
+            // Get item data
             int position = getAdapterPosition();
+            BleDeviceItemData item = mBondedList.get(position);
 
+            // sendBroadcast with device data
             Intent disconnectIntent = new Intent(Constant.ACTION_REQUEST_DISCONNECT);
-            disconnectIntent.putExtra(Constant.DEVICE_ADDRESS, mBondedList.get(position).get(Constant.DEVICE_ADDRESS).toString());
+            disconnectIntent.putExtra(BluetoothDevice.EXTRA_DEVICE, item.getDevice());
             mContext.sendBroadcast(disconnectIntent);
         }
     }

@@ -36,10 +36,10 @@ import com.ppcrong.blehelper.adapter.AvailableListAdapter;
 import com.ppcrong.blehelper.adapter.BondedListAdapter;
 import com.ppcrong.blehelper.ble.BleGattCb;
 import com.ppcrong.blehelper.ble.BleScanner;
+import com.ppcrong.blehelper.model.BleDeviceItemData;
 import com.ppcrong.blehelper.utils.Constant;
 import com.socks.library.KLog;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -62,8 +62,6 @@ public class BleScannerActivity extends AppCompatActivity {
     private BleScanner mScanner;
     private BluetoothGatt mGatt;
     private BleGattCb mBleGattCb;
-    private String mConnectedName = "";
-    private String mConnectedAddress = "";
     private boolean mManualDisconnect = false;
     // endregion [Variable]
 
@@ -73,8 +71,8 @@ public class BleScannerActivity extends AppCompatActivity {
     // endregion [Adapter]
 
     // region [List]
-    private CopyOnWriteArrayList<HashMap<String, Object>> mAvailableList = new CopyOnWriteArrayList<>();
-    private CopyOnWriteArrayList<HashMap<String, Object>> mBondedList = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<BleDeviceItemData> mAvailableList = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<BleDeviceItemData> mBondedList = new CopyOnWriteArrayList<>();
     // endregion [List]
 
     // region [Widget]
@@ -293,6 +291,67 @@ public class BleScannerActivity extends AppCompatActivity {
 
         return filter;
     }
+
+    private void updateDeviceList(boolean connected, final BluetoothDevice device) {
+        if (!connected) {
+            // Remove device from bonded list and add to available list
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    // Remove from bonded list
+                    for (int i = 0; i < mBondedList.size(); i++) {
+
+                        if (mBondedList.get(i).getDevice().getAddress().equals(device.getAddress())) {
+
+                            mBondedList.remove(i);
+                            mBondedListAdapter.notifyDataSetChanged();
+                        }
+                    }
+
+                    hideConnectProgress(device.getAddress());
+                }
+            });
+        } else {
+            // Prepare data for bonded list
+            final BleDeviceItemData item = new BleDeviceItemData(device);
+
+            // Add device to bonded list and remove from available list
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    // Add to bonded list
+                    mBondedList.add(item);
+                    mBondedListAdapter.notifyDataSetChanged();
+
+                    // Remove from available list
+                    for (int i = 0; i < mAvailableList.size(); i++) {
+
+                        if (mAvailableList.get(i).getDevice().getAddress().equals(item.getDevice().getAddress())) {
+
+                            mAvailableList.remove(i);
+                            mAvailableListAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private void hideConnectProgress(String deviceAddress) {
+        // Hide connecting progress
+        for (int i = 0; i < mAvailableList.size(); i++) {
+
+            BleDeviceItemData item = mAvailableList.get(i);
+            BluetoothDevice device = item.getDevice();
+            if (device.getAddress().equals(deviceAddress)) {
+
+                item.setIsConnecting(false);
+                mAvailableListAdapter.notifyDataSetChanged();
+            }
+        }
+    }
     // endregion [Private Function]
 
     // region [Task]
@@ -332,7 +391,11 @@ public class BleScannerActivity extends AppCompatActivity {
             final String action = intent.getAction();
             KLog.i(action);
 
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
             if (action.equalsIgnoreCase(Constant.ACTION_REQUEST_CONNECT)) {
+
+                KLog.d("Request CONNECTING " + device.getName() + "(" + device.getAddress() +")");
 
                 if (!mTvScanState.getText().toString().equalsIgnoreCase(mRes.getString(R.string.scan_completed))) {
                     scanDevice(false, true);
@@ -340,40 +403,20 @@ public class BleScannerActivity extends AppCompatActivity {
                     scanDevice(false, false);
                 }
 
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-
-                boolean isExist = false;
-
-                if (mConnectedAddress.equals(device.getAddress())) {
-                    isExist = true;
-                }
-
                 boolean hasBondedDevice = mBondedList.size() != 0;
-                KLog.i("isExist: " + isExist + ", hasBondedDevice: " + hasBondedDevice);
+                KLog.i("hasBondedDevice: " + hasBondedDevice);
 
                 // Only connect device when no bonded device
-                if (!isExist && !hasBondedDevice) {
-
-                    if (mConnectedAddress.equals("")) {
-
-                        mConnectedName = (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName();
-                        mConnectedAddress = device.getAddress();
-                        mGatt = mBleHelper.connectGatt(device);
-                    }
+                if (!hasBondedDevice) {
+                    // Connect device
+                    mGatt = mBleHelper.connectGatt(device);
                 } else {
                     // Hide connecting progress
-                    for (int i = 0; i < mAvailableList.size(); i++) {
-
-                        if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(device.getAddress())) {
-
-                            mAvailableList.get(i).put(Constant.DEVICE_CONNECTING, false);
-                            mAvailableListAdapter.notifyDataSetChanged();
-                        }
-                    }
+                    hideConnectProgress(device.getAddress());
                 }
             } else if (action.equals(Constant.ACTION_REQUEST_DISCONNECT)) {
 
-                final String address = intent.getStringExtra(Constant.DEVICE_ADDRESS);
+                KLog.d("Request DISCONNECTING " + device.getName() + "(" + device.getAddress() +")");
 
                 MaterialDialog dialog = new MaterialDialog.Builder(context)
                         .title(R.string.disconnect)
@@ -386,15 +429,10 @@ public class BleScannerActivity extends AppCompatActivity {
                             @Override
                             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
 
-                                if (!address.isEmpty()) {
+                                mManualDisconnect = true;
 
-                                    if (mConnectedAddress.equals(address)) {
-                                        mManualDisconnect = true;
-
-                                        // Disconnect GATT client
-                                        if (mGatt != null) mGatt.disconnect();
-                                    }
-                                }
+                                // Disconnect GATT client
+                                if (mGatt != null) mGatt.disconnect();
                             }
                         })
                         .build();
@@ -463,22 +501,19 @@ public class BleScannerActivity extends AppCompatActivity {
                     else
                         KLog.d("name = " + device.getName());
 
-                    HashMap<String, Object> deviceDataMap = new HashMap();
-                    deviceDataMap.put(Constant.DEVICE_NAME, (device.getName() == null) ? mRes.getString(R.string.unknown) : device.getName());
-                    deviceDataMap.put(Constant.DEVICE_ADDRESS, device.getAddress());
-                    deviceDataMap.put(Constant.DEVICE_BLE, device);
+                    BleDeviceItemData item = new BleDeviceItemData(device);
 
                     boolean isExist = false;
                     for (int i = 0; i < mAvailableList.size(); i++) {
-                        Object address = mAvailableList.get(i).get(Constant.DEVICE_ADDRESS);
+                        String address = mAvailableList.get(i).getDevice().getAddress();
                         // Check address null to prevent exception
-                        if (address != null && address.equals(device.getAddress())) {
+                        if (address.equals(device.getAddress())) {
                             isExist = true;
                         }
                     }
 
                     if (!isExist) {
-                        mAvailableList.add(deviceDataMap);
+                        mAvailableList.add(item);
                         mAvailableListAdapter.notifyDataSetChanged();
                     }
                 }
@@ -496,35 +531,7 @@ public class BleScannerActivity extends AppCompatActivity {
         if (!cb.isConnected()) {
 
             // Remove device from bonded list and add to available list
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    for (int i = 0; i < mBondedList.size(); i++) {
-
-                        if (mBondedList.get(i).get(Constant.DEVICE_ADDRESS).equals(cb.mDevice.getAddress())) {
-
-                            mBondedList.remove(i);
-                            mBondedListAdapter.notifyDataSetChanged();
-                        }
-                    }
-
-                    for (int i = 0; i < mAvailableList.size(); i++) {
-
-                        if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(cb.mDevice.getAddress())) {
-
-                            mAvailableList.get(i).put(Constant.DEVICE_CONNECTING, false);
-                            mAvailableListAdapter.notifyDataSetChanged();
-                        }
-                    }
-                }
-            });
-
-            // Reset name and address
-            if (mConnectedAddress.equals(cb.mDevice.getAddress())) {
-                mConnectedName = "";
-                mConnectedAddress = "";
-            }
+            updateDeviceList(false, cb.mDevice);
 
             // If manually disconnect, don't show snackbar and close GATT client
             if (!mManualDisconnect) {
@@ -553,36 +560,8 @@ public class BleScannerActivity extends AppCompatActivity {
             }
 
         } else {
-            // Check name and addr for re-connect case
-            if (mConnectedAddress.equals("")) {
-
-                mConnectedName = (cb.mDevice.getName() == null) ? mRes.getString(R.string.unknown) : cb.mDevice.getName();
-                mConnectedAddress = cb.mDevice.getAddress();
-            }
-
-            // Prepare data for bonded list
-            final HashMap<String, Object> map = new HashMap();
-            map.put(Constant.DEVICE_NAME, (cb.mDevice.getName() == null) ? mRes.getString(R.string.unknown) : cb.mDevice.getName());
-            map.put(Constant.DEVICE_ADDRESS, cb.mDevice.getAddress());
-
-            // Add device to bonded list and remove from avaiable list
-            runOnUiThread(new Runnable() {
-
-                @Override
-                public void run() {
-                    mBondedList.add(map);
-                    mBondedListAdapter.notifyDataSetChanged();
-
-                    for (int i = 0; i < mAvailableList.size(); i++) {
-
-                        if (mAvailableList.get(i).get(Constant.DEVICE_ADDRESS).equals(cb.mDevice.getAddress())) {
-
-                            mAvailableList.remove(i);
-                            mAvailableListAdapter.notifyDataSetChanged();
-                        }
-                    }
-                }
-            });
+            // Add device to bonded list and remove from available list
+            updateDeviceList(true, cb.mDevice);
         }
     }
     // endregion [Callback]

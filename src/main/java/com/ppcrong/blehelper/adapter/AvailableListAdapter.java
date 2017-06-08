@@ -12,10 +12,10 @@ import android.widget.TextView;
 
 import com.ppcrong.blehelper.R;
 import com.ppcrong.blehelper.R2;
+import com.ppcrong.blehelper.model.BleDeviceItemData;
 import com.ppcrong.blehelper.utils.Constant;
 import com.socks.library.KLog;
 
-import java.util.HashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import butterknife.BindView;
@@ -24,9 +24,9 @@ import butterknife.ButterKnife;
 public class AvailableListAdapter extends RecyclerView.Adapter<AvailableListAdapter.AvailableDeviceViewHolder> {
 
     private Context mContext;
-    private CopyOnWriteArrayList<HashMap<String, Object>> mAvailableList;
+    private CopyOnWriteArrayList<BleDeviceItemData> mAvailableList;
 
-    public AvailableListAdapter(Context context, CopyOnWriteArrayList<HashMap<String, Object>> availableList) {
+    public AvailableListAdapter(Context context, CopyOnWriteArrayList<BleDeviceItemData> availableList) {
         this.mContext = context;
         this.mAvailableList = availableList;
     }
@@ -42,27 +42,24 @@ public class AvailableListAdapter extends RecyclerView.Adapter<AvailableListAdap
     public void onBindViewHolder(AvailableDeviceViewHolder holder, int position) {
         KLog.d("position: " + position);
 
-        String name = mAvailableList.get(position).get(Constant.DEVICE_NAME).toString();
-        String address = mAvailableList.get(position).get(Constant.DEVICE_ADDRESS).toString();
-        boolean isConnecting = mAvailableList.get(position).get(Constant.DEVICE_CONNECTING) == null ? false : (boolean) mAvailableList.get(position).get(Constant.DEVICE_CONNECTING);
+        // Get item data
+        BleDeviceItemData item = mAvailableList.get(position);
 
-        holder.mTvName.setText(name);
-        holder.mTvAddress.setText(address);
-
-        if (isConnecting)
+        // Show/Hide connecting progress
+        if (item.getIsConnecting())
             holder.mPbConnecting.setVisibility(View.VISIBLE);
         else
             holder.mPbConnecting.setVisibility(View.GONE);
+
+        // Get device to set name and address
+        BluetoothDevice device = item.getDevice();
+        holder.mTvName.setText((device.getName() == null) ? mContext.getString(R.string.unknown) : device.getName());
+        holder.mTvAddress.setText(device.getAddress());
     }
 
     @Override
     public int getItemCount() {
         return mAvailableList.size();
-    }
-
-    public BluetoothDevice getDevice(int position) {
-
-        return (BluetoothDevice) mAvailableList.get(position).get(Constant.DEVICE_BLE);
     }
 
     public class AvailableDeviceViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -86,12 +83,17 @@ public class AvailableListAdapter extends RecyclerView.Adapter<AvailableListAdap
         @Override
         public void onClick(View view) {
 
+            // Get item data
             int position = getAdapterPosition();
-            mAvailableList.get(position).put(Constant.DEVICE_CONNECTING, true);
+            BleDeviceItemData item = mAvailableList.get(position);
+
+            // Show connecting progress
+            item.setIsConnecting(true);
             notifyDataSetChanged();
 
+            // sendBroadcast with device data
             Intent connectIntent = new Intent(Constant.ACTION_REQUEST_CONNECT);
-            connectIntent.putExtra(BluetoothDevice.EXTRA_DEVICE, getDevice(position));
+            connectIntent.putExtra(BluetoothDevice.EXTRA_DEVICE, item.getDevice());
             mContext.sendBroadcast(connectIntent);
         }
     }
