@@ -62,7 +62,6 @@ public class BleScannerActivity extends AppCompatActivity {
     private BleScanner mScanner;
     private BluetoothGatt mGatt;
     private BleGattCb mBleGattCb;
-    private boolean mManualDisconnect = false;
     // endregion [Variable]
 
     // region [Adapter]
