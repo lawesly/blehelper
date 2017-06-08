@@ -48,7 +48,6 @@ public class BleGattCb extends BluetoothGattCallback {
         if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothProfile.STATE_CONNECTED) {
 
             mConnectState = BluetoothProfile.STATE_CONNECTED;
-            BleHelper.setIsConnected(mContext, true);
 
             // Discover Services before read/write characteristics
             gatt.discoverServices();
@@ -57,7 +56,6 @@ public class BleGattCb extends BluetoothGattCallback {
 
             // Reset variables
             mConnectState = BluetoothProfile.STATE_DISCONNECTED;
-            BleHelper.setIsConnected(mContext, false);
         }
     }
 

@@ -128,6 +128,8 @@ public class BleScannerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         KLog.d();
+
+        // Stop scan
         scanDevice(false, true);
 
         // Disconnect and Close GATT client
@@ -141,12 +143,37 @@ public class BleScannerActivity extends AppCompatActivity {
         // Unregister receiver
         unregisterReceiver(mBleConnectReceiver);
 
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        KLog.d();
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // NOTE
+        // [Root Cause] If saving BleHelper stuff in onDestroy, MainActivity's onResume is earlier called than onDestroy.
+        // [Workaround] Save BleHelper stuff here because onBackPressed is earlier than MainActivity's onResume
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         // Save auto connect
         BleHelper.setIsAutoConnect(mContext, mCbAutoConnect.isChecked());
 
         // Save pair enable
         BleHelper.setIsPairEnabled(mContext, mCbPairDevice.isChecked());
-        super.onDestroy();
+
+        // Save isConnected
+        BleHelper.setIsConnected(mContext, mBondedList.size() > 0 && mBleHelper.isDeviceConnected());
+
+        // Disconnect and Close GATT client
+        if (mGatt != null) {
+
+            mGatt.disconnect();
+            mGatt.close();
+            mGatt = null;
+        }
+
+        super.onBackPressed();
     }
 
     @Override

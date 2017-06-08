@@ -65,8 +65,24 @@ public class BleHelper {
     // endregion [Builder]
 
     // region [Public Function]
+    /**
+     * Show BLE Scanner
+     * <br/>
+     * (Here will disconnect current connected device to let scanner can scan for current connected device)
+     */
     @UiThread
     public void showScanner() {
+
+        // Set manual disconnect
+        setManualDisconnect(true);
+
+        // Save isConnected
+        BleHelper.setIsConnected(mBuilder.mContext, isDeviceConnected());
+
+        // Disconnect device
+        if (mGatt != null && isDeviceConnected()) {
+            mGatt.disconnect();
+        }
 
         Intent pageIntent = new Intent();
         pageIntent.setClass(mBuilder.mContext, BleScannerActivity.class);
