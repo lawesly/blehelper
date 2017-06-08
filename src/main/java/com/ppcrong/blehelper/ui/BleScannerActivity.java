@@ -429,7 +429,7 @@ public class BleScannerActivity extends AppCompatActivity {
                             @Override
                             public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
 
-                                mManualDisconnect = true;
+                                mBleHelper.setManualDisconnect(true);
 
                                 // Disconnect GATT client
                                 if (mGatt != null) mGatt.disconnect();
@@ -534,7 +534,7 @@ public class BleScannerActivity extends AppCompatActivity {
             updateDeviceList(false, cb.mDevice);
 
             // If manually disconnect, don't show snackbar and close GATT client
-            if (!mManualDisconnect) {
+            if (!mBleHelper.isManualDisconnect()) {
 
                 // Disconnect unexpectedly, show snackbar to inform user
                 Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
@@ -559,7 +559,11 @@ public class BleScannerActivity extends AppCompatActivity {
                 }
             }
 
+            // Reset manual disconnect flag
+            mBleHelper.setManualDisconnect(false);
+
         } else {
+
             // Add device to bonded list and remove from available list
             updateDeviceList(true, cb.mDevice);
         }

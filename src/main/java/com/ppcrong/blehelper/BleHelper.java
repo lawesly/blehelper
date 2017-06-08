@@ -25,7 +25,8 @@ public class BleHelper {
 
     // region [Variable]
     protected final Builder mBuilder;
-    public BluetoothGatt mGatt;
+    private BluetoothGatt mGatt;
+    private boolean mManualDisconnect;
     // endregion [Variable]
 
     // region [Ctor]
@@ -117,6 +118,15 @@ public class BleHelper {
         return false;
     }
 
+    public boolean isManualDisconnect() {
+        KLog.d("mManualDisconnect: " + mManualDisconnect);
+        return mManualDisconnect;
+    }
+
+    public void setManualDisconnect(boolean manualDisconnect) {
+        mManualDisconnect = manualDisconnect;
+    }
+    // region [static]
     public static String getPairAddress(Context ctx) {
         SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
         return sp.getString(Constant.DEVICE_PAIR_ADDRESS, "");
@@ -156,6 +166,7 @@ public class BleHelper {
         SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
         sp.put(Constant.DEVICE_IS_CONNECTED, isConnected);
     }
+    // endregion [static]
 
     // endregion [Public Function]
 }
