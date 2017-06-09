@@ -39,6 +39,8 @@ import com.ppcrong.blehelper.adapter.BondedListAdapter;
 import com.ppcrong.blehelper.ble.BleGattCb;
 import com.ppcrong.blehelper.ble.BleGattListener;
 import com.ppcrong.blehelper.ble.BleScanner;
+import com.ppcrong.blehelper.ble.BleUtils;
+import com.ppcrong.blehelper.ble.UUIDs;
 import com.ppcrong.blehelper.model.BleDeviceItemData;
 import com.ppcrong.blehelper.utils.Constant;
 import com.socks.library.KLog;
@@ -375,6 +377,29 @@ public class BleScannerActivity extends AppCompatActivity implements BleGattList
             }
         }
     }
+
+    private void showBattery(BluetoothGatt gatt, int percentage) {
+        KLog.d("percentage: " + percentage);
+        BluetoothDevice bondedDevice = gatt.getDevice();
+        // Set percentage
+        for (int i = 0; i < mBondedList.size(); i++) {
+
+            BleDeviceItemData item = mBondedList.get(i);
+            BluetoothDevice device = item.getDevice();
+            if (bondedDevice.getAddress().equals(device.getAddress())) {
+
+                item.setBatteryPercentage(percentage);
+                runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        mBondedListAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        }
+    }
     // endregion [Private Function]
 
     // region [Task]
@@ -596,11 +621,21 @@ public class BleScannerActivity extends AppCompatActivity implements BleGattList
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
 
-    }
+        if (status == BluetoothGatt.GATT_SUCCESS) {
+
+            KLog.d("########## Read battery");
+            BleUtils.readBatteryLevel(gatt);
+        }
+   }
 
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 
+        if (characteristic.getUuid().equals(UUIDs.BATTERY_LEVEL_CHARACTERISTIC)) {
+
+            int percentage = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+            showBattery(gatt, percentage);
+        }
     }
 
     @Override

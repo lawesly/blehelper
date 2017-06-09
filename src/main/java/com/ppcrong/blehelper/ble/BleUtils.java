@@ -233,6 +233,33 @@ public class BleUtils {
     }
     // endregion [Common]
 
+    // region [Read/Write]
+
+    /**
+     * Read battery level to trigger onCharacteristicRead
+     *
+     * @param gatt The gatt
+     * @return True OK, False Fail
+     */
+    public static boolean readBatteryLevel(BluetoothGatt gatt) {
+        KLog.d();
+        return readCharacteristic(gatt, UUIDs.BATTERY_SERVICE, UUIDs.BATTERY_LEVEL_CHARACTERISTIC);
+    }
+
+    /**
+     * Set battery notification.
+     *
+     * @param gatt   The gatt
+     * @param enable Enable flag
+     * @return True OK, False Fail
+     */
+    public static boolean setBatteryNotification(BluetoothGatt gatt, boolean enable) {
+        KLog.d();
+        return writeDescriptor(gatt, UUIDs.BATTERY_SERVICE, UUIDs.BATTERY_LEVEL_CHARACTERISTIC, enable);
+    }
+
+    // endregion [Read/Write]
+
     // region [Connection]
     /**
      * Connect BLE device by MAC address directly
