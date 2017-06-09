@@ -2,6 +2,8 @@ package com.ppcrong.blehelper.ui;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -35,6 +37,7 @@ import com.ppcrong.blehelper.R2;
 import com.ppcrong.blehelper.adapter.AvailableListAdapter;
 import com.ppcrong.blehelper.adapter.BondedListAdapter;
 import com.ppcrong.blehelper.ble.BleGattCb;
+import com.ppcrong.blehelper.ble.BleGattListener;
 import com.ppcrong.blehelper.ble.BleScanner;
 import com.ppcrong.blehelper.model.BleDeviceItemData;
 import com.ppcrong.blehelper.utils.Constant;
@@ -50,7 +53,7 @@ import no.nordicsemi.android.support.v18.scanner.ScanCallback;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;
 import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
-public class BleScannerActivity extends AppCompatActivity {
+public class BleScannerActivity extends AppCompatActivity implements BleGattListener {
 
     // region [Content]
     private Context mContext;
@@ -162,7 +165,7 @@ public class BleScannerActivity extends AppCompatActivity {
         BleHelper.setIsPairEnabled(mContext, mCbPairDevice.isChecked());
 
         // Save isConnected
-        BleHelper.setIsConnected(mContext, mBondedList.size() > 0 && mBleHelper.isDeviceConnected());
+        BleHelper.setIsConnectedInScanner(mContext, mBondedList.size() > 0 && mBleHelper.isDeviceConnected());
 
         // Disconnect and Close GATT client
         if (mGatt != null) {
@@ -240,13 +243,7 @@ public class BleScannerActivity extends AppCompatActivity {
         mStopScanHandler.postDelayed(mStopScanRunnable, Constant.SCAN_PERIOD);
 
         // init BleGattCb
-        mBleGattCb = new BleGattCb(mContext){
-            @Override
-            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                super.onConnectionStateChange(gatt, status, newState);
-                BleScannerActivity.this.onConnectionStateChange(gatt, status, newState, this);
-            }
-        };
+        mBleGattCb = new BleGattCb(mContext, this);
 
         // init BleHelper
         mBleHelper = new BleHelper.Builder(this)
@@ -552,19 +549,20 @@ public class BleScannerActivity extends AppCompatActivity {
         }
     };
 
-    private void onConnectionStateChange(BluetoothGatt gatt, int status, int newState, final BleGattCb cb) {
+    @Override
+    public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
-        if (!cb.isConnected()) {
+        if (!mBleGattCb.isConnected()) {
 
             // Remove device from bonded list and add to available list
-            updateDeviceList(false, cb.mDevice);
+            updateDeviceList(false, mBleGattCb.mDevice);
 
             // If manually disconnect, don't show snackbar and close GATT client
             if (!mBleHelper.isManualDisconnect()) {
 
                 // Disconnect unexpectedly, show snackbar to inform user
                 Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content),
-                        ((cb.mDevice.getName() == null) ? mRes.getString(R.string.unknown) : cb.mDevice.getName()) + " " + mRes.getString(R.string.has_been_disconnected),
+                        ((mBleGattCb.mDevice.getName() == null) ? mRes.getString(R.string.unknown) : mBleGattCb.mDevice.getName()) + " " + mRes.getString(R.string.has_been_disconnected),
                         Snackbar.LENGTH_INDEFINITE);
                 snackbar.setAction(mRes.getString(R.string.dismiss), new View.OnClickListener() {
 
@@ -591,8 +589,53 @@ public class BleScannerActivity extends AppCompatActivity {
         } else {
 
             // Add device to bonded list and remove from available list
-            updateDeviceList(true, cb.mDevice);
+            updateDeviceList(true, mBleGattCb.mDevice);
         }
+    }
+
+    @Override
+    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
+    }
+
+    @Override
+    public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+
+    }
+
+    @Override
+    public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+
+    }
+
+    @Override
+    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+
+    }
+
+    @Override
+    public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+
+    }
+
+    @Override
+    public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+
+    }
+
+    @Override
+    public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
+
+    }
+
+    @Override
+    public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+
+    }
+
+    @Override
+    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+
     }
     // endregion [Callback]
 }

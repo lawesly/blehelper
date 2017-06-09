@@ -17,22 +17,13 @@ public class Constant {
     public static final String DEVICE_AUTO_CONNECT = "device_auto_connect";
     public static final String DEVICE_PAIR_ADDRESS = "device_pair_address";
     public static final String DEVICE_PAIR_ENABLE = "device_pair_enable";
-    public static final String DEVICE_IS_CONNECTED = "device_is_connected";
+    public static final String DEVICE_IS_CONNECTED_IN_SCANNER = "device_is_connected_in_scanner";
     // endregion [SP Key]
 
     // region [Action]
     public static final String ACTION_REQUEST_CONNECT = LIB_NAME + ".ACTION_REQUEST_CONNECT";
     public static final String ACTION_REQUEST_DISCONNECT = LIB_NAME + ".ACTION_REQUEST_DISCONNECT";
     // endregion [Action]
-
-    // region [Map Key]
-    public static final String DEVICE_BLE = "device_ble";
-    public static final String DEVICE_TYPE = "device_type";
-    public static final String DEVICE_NAME = "device_name";
-    public static final String DEVICE_ADDRESS = "device_address";
-    public static final String DEVICE_BATTERY = "device_battery";
-    public static final String DEVICE_CONNECTING = "device_connecting";
-    // endregion [Map Key]
 
     // region [BLE Scan]
     public static final long SCAN_PERIOD = 60000L;

@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.support.annotation.NonNull;
 
 import com.ppcrong.blehelper.BleHelper;
 import com.socks.library.KLog;
@@ -23,16 +24,16 @@ public class BleGattCb extends BluetoothGattCallback {
     public BluetoothDevice mDevice;
     private int mConnectState;
     private Context mContext;
+    private BleGattListener mListener;
+    public boolean mManualDisconnect;
     // endregion [Variable]
 
     // region [Ctor]
-    /**
-     * Ctor
-     */
-    public BleGattCb(Context ctx) {
+    public BleGattCb(@NonNull Context ctx, @NonNull BleGattListener listener) {
 
         mContext = ctx;
-        mConnectState = BluetoothProfile.STATE_DISCONNECTED;
+        mListener = listener;
+        reset();
     }
     // endregion [Ctor]
 
@@ -40,22 +41,32 @@ public class BleGattCb extends BluetoothGattCallback {
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
-        KLog.i("oldStatus : " + status + ", newState : " + getConnectString(newState) + "(" + newState + ")"
+        KLog.i("########## oldStatus : " + status + ", newState : " + getConnectString(newState) + "(" + newState + ")"
                 + ", device : " + gatt.getDevice().getAddress());
 
         mDevice = gatt.getDevice();
 
         if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothProfile.STATE_CONNECTED) {
 
+            // Set state
             mConnectState = BluetoothProfile.STATE_CONNECTED;
+
+            // Callback
+            mListener.onConnectionStateChange(gatt, status, newState);
 
             // Discover Services before read/write characteristics
             gatt.discoverServices();
 
         } else {
 
-            // Reset variables
+            // Reset state
             mConnectState = BluetoothProfile.STATE_DISCONNECTED;
+
+            // Callback
+            mListener.onConnectionStateChange(gatt, status, newState);
+
+            // Reset stuff
+            reset();
         }
     }
 
@@ -80,12 +91,15 @@ public class BleGattCb extends BluetoothGattCallback {
                 }
             }
         }
+
+        mListener.onServicesDiscovered(gatt, status);
     }
 
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 
         KLog.d("status = " + status + " UUID : " + characteristic.getUuid());
+        mListener.onCharacteristicRead(gatt, characteristic, status);
 
     }
 
@@ -93,6 +107,7 @@ public class BleGattCb extends BluetoothGattCallback {
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 
         KLog.d("status = " + status + " UUID : " + characteristic.getUuid());
+        mListener.onCharacteristicWrite(gatt, characteristic, status);
 
     }
 
@@ -100,6 +115,7 @@ public class BleGattCb extends BluetoothGattCallback {
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
 
         KLog.i("UUID : " + characteristic.getUuid());
+        mListener.onCharacteristicChanged(gatt, characteristic);
 
     }
 
@@ -107,6 +123,7 @@ public class BleGattCb extends BluetoothGattCallback {
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 
         KLog.d("status = " + status + " UUID : " + descriptor.getUuid());
+        mListener.onDescriptorWrite(gatt, descriptor, status);
 
     }
 
@@ -114,22 +131,26 @@ public class BleGattCb extends BluetoothGattCallback {
     public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 
         KLog.d("status = " + status + " UUID : " + descriptor.getUuid());
+        mListener.onDescriptorRead(gatt, descriptor, status);
 
     }
 
     @Override
     public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
         KLog.i("status : " + status);
+        mListener.onReliableWriteCompleted(gatt, status);
     }
 
     @Override
     public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
         KLog.i("rssi : " + rssi + "dBm, status : " + status);
+        mListener.onReadRemoteRssi(gatt, rssi, status);
     }
 
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
         KLog.i("mtu : " + mtu + " status : " + status);
+        mListener.onMtuChanged(gatt, mtu, status);
     }
     // endregion [Override]
 
@@ -140,6 +161,11 @@ public class BleGattCb extends BluetoothGattCallback {
     // endregion [Public Function]
 
     // region [Private Function]
+    private void reset() {
+        mDevice = null;
+        mConnectState = BluetoothProfile.STATE_DISCONNECTED;
+        mManualDisconnect = false;
+    }
 
     private String getConnectString(int state) {
         String s = "";

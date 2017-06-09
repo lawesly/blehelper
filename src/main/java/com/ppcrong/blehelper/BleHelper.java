@@ -3,7 +3,6 @@ package com.ppcrong.blehelper;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -26,7 +25,6 @@ public class BleHelper {
     // region [Variable]
     protected final Builder mBuilder;
     private BluetoothGatt mGatt;
-    private boolean mManualDisconnect;
     // endregion [Variable]
 
     // region [Ctor]
@@ -47,7 +45,7 @@ public class BleHelper {
     public static class Builder {
 
         protected Context mContext;
-        protected BluetoothGattCallback mBleGattCb;
+        protected BleGattCb mBleGattCb;
 
         public Builder(@NonNull Context context) {
             this.mContext = context;
@@ -57,7 +55,7 @@ public class BleHelper {
             return new BleHelper(this);
         }
 
-        public Builder setBleGattCb(@NonNull BluetoothGattCallback bleGattCb) {
+        public Builder setBleGattCb(@NonNull BleGattCb bleGattCb) {
             mBleGattCb = bleGattCb;
             return this;
         }
@@ -76,8 +74,8 @@ public class BleHelper {
         // Set manual disconnect
         setManualDisconnect(true);
 
-        // Save isConnected
-        BleHelper.setIsConnected(mBuilder.mContext, isDeviceConnected());
+        // Save isConnectedInScanner
+        BleHelper.setIsConnectedInScanner(mBuilder.mContext, isDeviceConnected());
 
         // Disconnect device
         if (mGatt != null && isDeviceConnected()) {
@@ -93,22 +91,22 @@ public class BleHelper {
     public BluetoothGatt initConnection() {
         String pairAddress = getPairAddress(mBuilder.mContext);
         boolean pairEnabled = getIsPairEnabled(mBuilder.mContext);
-        boolean isNeedConnected = getIsConnected(mBuilder.mContext);
+        boolean isConnectedInScanner = getIsConnectedInScanner(mBuilder.mContext);
         boolean isDeviceConnected = isDeviceConnected();
         boolean autoConnect = getIsAutoConnect(mBuilder.mContext);
         KLog.d("pairAddress: " + pairAddress + ", pairEnabled: " + pairEnabled
-                + ", isNeedConnected: " + isNeedConnected + ", isDeviceConnected: " + isDeviceConnected
+                + ", isConnectedInScanner: " + isConnectedInScanner + ", isDeviceConnected: " + isDeviceConnected
                 + ", autoConnect: " + autoConnect);
 
         if (isDeviceConnected) { // Now device is connected
-            if (!isNeedConnected) {
+            if (!isConnectedInScanner) {
                 // If device isn't connected in Scanner page, we need to make other page status the same as Scanner page, so we disconnect device here
                 mGatt.disconnect();
                 mGatt = null;
             }
         } else {
-            // Directly connectGatt when pairEnabled or device is connected
-            if (!pairAddress.isEmpty() && (pairEnabled || isNeedConnected)) {
+            // Directly connectGatt when pairEnabled or device is connected in scanner
+            if (!pairAddress.isEmpty() && (pairEnabled || isConnectedInScanner)) {
                 mGatt = BleUtils.connectGatt(mBuilder.mContext, mBuilder.mBleGattCb, pairAddress, autoConnect);
             }
         }
@@ -128,19 +126,17 @@ public class BleHelper {
     }
 
     public boolean isDeviceConnected() {
-        if (mBuilder.mBleGattCb instanceof BleGattCb) {
-            return ((BleGattCb) mBuilder.mBleGattCb).isConnected();
-        }
-        return false;
+        KLog.d("isDeviceConnected: " + mBuilder.mBleGattCb.isConnected());
+        return mBuilder.mBleGattCb.isConnected();
     }
 
     public boolean isManualDisconnect() {
-        KLog.d("mManualDisconnect: " + mManualDisconnect);
-        return mManualDisconnect;
+        KLog.d("mManualDisconnect: " + mBuilder.mBleGattCb.mManualDisconnect);
+        return mBuilder.mBleGattCb.mManualDisconnect;
     }
 
     public void setManualDisconnect(boolean manualDisconnect) {
-        mManualDisconnect = manualDisconnect;
+        mBuilder.mBleGattCb.mManualDisconnect = manualDisconnect;
     }
     // region [static]
     public static String getPairAddress(Context ctx) {
@@ -173,14 +169,14 @@ public class BleHelper {
         sp.put(Constant.DEVICE_AUTO_CONNECT, isAutoConnect);
     }
 
-    public static boolean getIsConnected(Context ctx) {
+    public static boolean getIsConnectedInScanner(Context ctx) {
         SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
-        return sp.getBoolean(Constant.DEVICE_IS_CONNECTED, false);
+        return sp.getBoolean(Constant.DEVICE_IS_CONNECTED_IN_SCANNER, false);
     }
 
-    public static void setIsConnected(Context ctx, boolean isConnected) {
+    public static void setIsConnectedInScanner(Context ctx, boolean isConnected) {
         SPUtils sp = new SPUtils(ctx, Constant.SP_NAME_SCAN_SETTINGS);
-        sp.put(Constant.DEVICE_IS_CONNECTED, isConnected);
+        sp.put(Constant.DEVICE_IS_CONNECTED_IN_SCANNER, isConnected);
     }
     // endregion [static]
 
