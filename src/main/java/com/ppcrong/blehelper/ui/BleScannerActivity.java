@@ -137,12 +137,8 @@ public class BleScannerActivity extends AppCompatActivity implements BleGattList
         scanDevice(false, true);
 
         // Disconnect and Close GATT client
-        if (mGatt != null) {
-
-            mGatt.disconnect();
-            mGatt.close();
-            mGatt = null;
-        }
+        disconnectBle();
+        closeBle();
 
         // Unregister receiver
         unregisterReceiver(mBleConnectReceiver);
@@ -170,12 +166,8 @@ public class BleScannerActivity extends AppCompatActivity implements BleGattList
         BleHelper.setIsConnectedInScanner(mContext, mBondedList.size() > 0 && mBleHelper.isDeviceConnected());
 
         // Disconnect and Close GATT client
-        if (mGatt != null) {
-
-            mGatt.disconnect();
-            mGatt.close();
-            mGatt = null;
-        }
+        disconnectBle();
+        closeBle();
 
         super.onBackPressed();
     }
@@ -400,6 +392,19 @@ public class BleScannerActivity extends AppCompatActivity implements BleGattList
             }
         }
     }
+
+    private void disconnectBle() {
+        // Disconnect GATT client
+        if (mGatt != null) mGatt.disconnect();
+    }
+
+    private void closeBle() {
+        // Close GATT client
+        if (mGatt != null) {
+            mGatt.close();
+            mGatt = null;
+        }
+    }
     // endregion [Private Function]
 
     // region [Task]
@@ -480,7 +485,7 @@ public class BleScannerActivity extends AppCompatActivity implements BleGattList
                                 mBleHelper.setManualDisconnect(true);
 
                                 // Disconnect GATT client
-                                if (mGatt != null) mGatt.disconnect();
+                                disconnectBle();
                             }
                         })
                         .build();
@@ -601,15 +606,22 @@ public class BleScannerActivity extends AppCompatActivity implements BleGattList
                 snackbar.show();
 
             } else {
-                // Close GATT client (Only when manual disconnect)
-                if (mGatt != null) {
-                    mGatt.close();
-                    mGatt = null;
-                }
+                // Re-scan device
+//                runOnUiThread(new Runnable() {
+//                                  @Override
+//                                  public void run() {
+//                                      scanDevice(true, true);
+//                                  }
+//                              });
             }
 
-            // Reset manual disconnect flag
-            mBleHelper.setManualDisconnect(false);
+            // Close GATT client (Not only for manual case)
+            // [Symptom] Before we don't closeBle only when non-manual case for auto-connect task, however it will cause 2 devices are shown on bonded list issue
+            // [Root Cause] We don't closeBle when non-manual case and it will keep trigger Ble callback because we need to know connection status when auto-connect feature is true
+            // , however when user taps the same device in scanning list to connect (while ble framework is trying to re-connecting), it will exist 2 instances of ble callbacks to trigger
+            // twice RscBleCb
+            // [More Info] For auto-connect feature, maybe we should retry 3 times re-connecting by using connectGatt with MAC address
+            closeBle();
 
         } else {
 
