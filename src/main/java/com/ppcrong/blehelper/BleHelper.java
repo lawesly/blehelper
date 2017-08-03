@@ -40,7 +40,7 @@ public class BleHelper {
 
     // region [Builder]
     /**
-     * The class used to construct a BleScanner.
+     * Builder for {@link BleHelper}.
      */
     public static class Builder {
 
